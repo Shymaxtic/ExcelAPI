@@ -23,4 +23,4 @@ install: pip3 install --upgrade pip  # all three OSes agree about 'pip3'
 # 'python3' is a 'command not found' error on Windows but 'py' works on Windows only
 script: 
   - cd ./Test
-  - python3 TestExcelApi.py
+  - python ./TestExcelApi.py
