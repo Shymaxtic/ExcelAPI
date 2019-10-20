@@ -31,29 +31,34 @@ class ExcelFile:
     mDataRowSize  = 0                 # number of data row
     mDictData = {}       
     mHeaderCellInfo = {}           # list of info of main cell of header
-    mDataCellInfo = {}
+    mMergedDataCellInfo = {}
+    mPivotRow = 0
+    mHeaderInfoColumCache = {}
 
 
     def __init__(self, path: str):
         self.mPath = path     
 
     def __PostProcessMergedCell(self):
-        self.mDataCellInfo = {}
+        self.mMergedDataCellInfo = {}
         self.mHeaderCellInfo = {}
         for cellRange in self.mSheet.merged_cells.ranges:
-            # get column size
-            colNum = len(self.mSheet[cellRange.__str__()][0])
-            # get row size
-            rowNum = len(self.mSheet[cellRange.__str__()])
-            # get top-left cell
-            topLeftCell = self.mSheet[cellRange.__str__()][0][0]
-            # if cell range is in header area
-            if Utils.IsCellRangeInCellRange(cellRange.__str__(), self.mHeaderRange):
-                # add to dictionary
-                self.mHeaderCellInfo[topLeftCell.coordinate] = CellInfo(topLeftCell, topLeftCell, rowNum, colNum)
-            # if cell range is in data area
-            else:
-                self.mDataCellInfo[topLeftCell.coordinate] = CellInfo(topLeftCell, topLeftCell, rowNum, colNum)
+            for rowOfCell in self.mSheet[cellRange.__str__()]:
+                for cell in rowOfCell:
+                    # if this cell is in header range and is top-left cell
+                    if Utils.IsCellInCellRange(cell.coordinate, self.mHeaderRange) and \
+                        cell == self.mSheet[cellRange.__str__()][0][0]:
+                        colNum = len(self.mSheet[cellRange.__str__()][0]) # get column size
+                        rowNum = len(self.mSheet[cellRange.__str__()]) # get row size
+                        topLeftCell = self.mSheet[cellRange.__str__()][0][0] # get top-left cell
+                        self.mHeaderCellInfo[cell.coordinate] = CellInfo(cell, topLeftCell, rowNum, colNum)
+                        continue
+                    else:
+                        colNum = len(self.mSheet[cellRange.__str__()][0]) # get column size
+                        rowNum = len(self.mSheet[cellRange.__str__()]) # get row size
+                        topLeftCell = self.mSheet[cellRange.__str__()][0][0] # get top-left cell
+                        self.mMergedDataCellInfo[cell.coordinate] = CellInfo(cell, topLeftCell, rowNum, colNum)
+
         # print(self.mHeaderCellInfo)                
 
     def __GetHeaderCellInfo(self):
@@ -74,9 +79,9 @@ class ExcelFile:
         self.__GetHeaderCellInfo()
         sortedKeys = sorted(self.mHeaderCellInfo.keys())
         self.mHeaderList = {}
+        self.mHeaderInfoColumCache = {}
         for key in sortedKeys:
             # prepare parent header
-            parentHeader = None
             icell = self.mHeaderCellInfo[key].mCell
             if (icell.row > 1):
                 # if upper cell (merged cells/single cell) has value. It is parent of this cell
@@ -84,21 +89,37 @@ class ExcelFile:
                 # Check if upper cell is in any created header info
                 for headerInfo in self.mHeaderList.values():
                     if headerInfo.mCellInfo.Has(upperCell):
-                        parentHeader = headerInfo
-                        newHeaderInfo = HeaderInfo(self.mHeaderCellInfo[key], parentHeader)
-                        self.mHeaderList[newHeaderInfo.mFullName] = newHeaderInfo
+                        newHeaderInfo = HeaderInfo(self.mHeaderCellInfo[key], headerInfo)
+                        self.mHeaderList[newHeaderInfo.mFullName] = HeaderInfo(self.mHeaderCellInfo[key], headerInfo)
+                        self.mHeaderInfoColumCache[self.mHeaderCellInfo[key].mCell.column] = newHeaderInfo.mFullName
                         break
             else:
                 newHeaderInfo = HeaderInfo(self.mHeaderCellInfo[key], None) 
                 self.mHeaderList[newHeaderInfo.mFullName] = (newHeaderInfo)
-        for key in self.mHeaderList:
-            print(key, ":::", self.mHeaderList[key])
-                        
+                self.mHeaderInfoColumCache[self.mHeaderCellInfo[key].mCell.column] = newHeaderInfo.mFullName
+        # for key in self.mHeaderList:
+        #     print(key, ":::", self.mHeaderList[key])
+        # for key in self.mHeaderInfoColumCache:
+        #     print(key, ":::", self.mHeaderInfoColumCache[key])                            
+
+    def GetValue(self, cell):
+        if cell.coordinate in self.mMergedDataCellInfo:
+            return self.mMergedDataCellInfo[cell.coordinate].mTopLeftCell.value
+        return cell.value            
+
     def Open(self, sheet: str, headerRange:str, readOnly=False):
         self.mHeaderRange = headerRange
         self.mWorkBook = openpyxl.load_workbook(self.mPath, readOnly)
         self.mSheet = self.mWorkBook[sheet]
         self.mDataColumnSize = Utils.GetDimension(headerRange)[1]
         self.__GetHeaderInfo()
+        self.mPivotRow = openpyxl.utils.cell.coordinate_from_string(self.mHeaderRange.split(":")[1])[1]
 
-    # def Read(self, rowOffset: int):
+    def Read(self, rowOffset: int):
+        returnValue = {}
+        for i in range(self.mDataColumnSize):
+            headerName = self.mHeaderInfoColumCache[i+1]
+            # print(headerName)
+            cell = self.mSheet.cell(row=self.mPivotRow+rowOffset,column=i+1)
+            returnValue[headerName] = self.GetValue(cell)
+        return returnValue

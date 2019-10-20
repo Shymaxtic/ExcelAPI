@@ -2,7 +2,7 @@ import openpyxl
 
 def GetDimension(rangeString: str):
     min_col, min_row, max_col, max_row = openpyxl.utils.range_boundaries(rangeString)
-    return (max_row - min_row), (max_col - min_col)
+    return (max_row - min_row) + 1, (max_col - min_col) + 1
 
 def IsCellRangeInCellRange(checkRange: str, targetRange: str):
     min_col, min_row, max_col, max_row = openpyxl.utils.range_boundaries(checkRange)
