@@ -9,7 +9,7 @@ env:
   - PATH=/c/Python37:/c/Python37/Scripts:$PATH
   
 before_install:
-  - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
+#   - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
   - choco install python --version 3.7.4
   - python -m pip install --upgrade pip
   - pip install openpyxl
@@ -23,7 +23,7 @@ addons:
       description: "API for Excel having header"
     notification_email: shymaxtic@gmail.com
     build_command_prepend: 
-    build_command: 
+    build_command: python ./TestExcelApi.py
     branch_pattern: master
 
 script: 
