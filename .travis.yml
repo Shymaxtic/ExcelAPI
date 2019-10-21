@@ -1,13 +1,21 @@
-
-# env:
+name: "Python 3.7.4 on Windows"
+os: windows           # Windows 10.0.17134 N/A Build 17134
+language: shell       # 'language: python' is an error on Travis CI Windows
+env:
 #   global:
 #    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
 #    #   via the "travis encrypt" command using the project repo's public key
 #    - secure: "JQ5kbgTcfJNhzxKvwRSgu5TIuf022UJCwzY1IyJeo2c4TGlK68VNbjwbWSZ9995l+SjWFAOxT4Hxp4AmRPMpUvdJWkVJoRAF9rWfZUkbD+hiKRZZn1ZrtsgRaL6oNaXm4U2Vmy5Saacfh6dG1+Wisb18G8znbr0lEW/xlacYsRlbQW19qfgQ1C7BWoVHBX18MLaiXGcm7G3HLrXf9k48S8Z82fBR8PmIHVC4oaOthK9dlJ/m4HB5wGinVP4J3+Hi5uhh+NX7KgC/H7+X4h6dcVzMGTh5fjbE0uxE4PGgtr+UmApQ/MAevVq9fS5JXxCb8nG2+HO1aNahECE+XgfFTxXfi6PgLFGGnjOkPwS3XxI6CM4XnD13gO9EBd076Kz3MhUm/edDeO1hVeVip/cJN/bK8DbcBZR41SQbxShkXCiFzzz6IKE60/0gh7tzbfvgPuYsL1xEmK4jTRCsjNgD2t0QkMTd61OddKbJP9w7NruMuNB82UL/HuZ8vg2Yq7J0hcTdqhuLKD6shKrZrpI2jYcHveIZ87bwR0vKTZuWc/ZoxNa22aBO0dW2xsjbrcfUAbgoAJquwl7YZCR/fKdh+ChOPQSjhLIbg9+WIGl75NqkWzQYkadV/EqtaWgG1I/o3kGxFyUuopTStZH2M/l3HO7omgkaoTTjnWgTwlo+1zA="
-
-# before_install:
+  - PATH=/c/Python37:/c/Python37/Scripts:$PATH
+  
+before_install:
 #   - echo -n | openssl s_client -connect https://scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-certificates.crt
-
+  - choco install python --version 3.7.4
+  - python -m pip install --upgrade pip
+  - pip install openpyxl
+  
+install: pip3 install --upgrade pip  # all three OSes agree about 'pip3'  
+  
 addons:
   coverity_scan:
     project:
@@ -17,20 +25,7 @@ addons:
     build_command_prepend: 
     build_command: 
     branch_pattern: master
- 
-jobs:
-  include:
-    - name: "Python 3.7.4 on Windows"
-      os: windows           # Windows 10.0.17134 N/A Build 17134
-      language: shell       # 'language: python' is an error on Travis CI Windows
-      before_install:
-        - choco install python --version 3.7.4
-        - python -m pip install --upgrade pip
-        - pip install openpyxl
-      env: PATH=/c/Python37:/c/Python37/Scripts:$PATH
-install: pip3 install --upgrade pip  # all three OSes agree about 'pip3'
-# 'python' points to Python 2.7 on macOS but points to Python 3.7 on Linux and Windows
-# 'python3' is a 'command not found' error on Windows but 'py' works on Windows only
+
 script: 
   - cd ./Test
   - python ./TestExcelApi.py
