@@ -18,6 +18,7 @@
 import openpyxl
 from HeaderInfo import HeaderInfo 
 from CellInfo import CellInfo
+from HeaderInfo import D_SEPERATOR
 import Utils
 
 class ExcelFile:
@@ -26,14 +27,14 @@ class ExcelFile:
     mHeaderRange = ""           # Ex: "A1:N1"
     mWorkBook = None
     mSheet = None
-    mHeaderList = {}       
+    mHeaderList = {}                # {fullheadername:header info}   
     mDataColumnSize = 0                # number of data column
     mDataRowSize  = 0                 # number of data row
+    mHeaderCellInfo = {}           # list of info of main cell of header {coordinate:cell info}
+    mMergedDataCellInfo = {}        # list of cell in merged cell area {coordinate:cell info}
+    mPivotRow = 0                   # row at lowest header.
+    mHeaderInfoColumCache = {}      # {column:fullheadername}
     mDictData = {}       
-    mHeaderCellInfo = {}           # list of info of main cell of header
-    mMergedDataCellInfo = {}
-    mPivotRow = 0
-    mHeaderInfoColumCache = {}
 
 
     def __init__(self, path: str):
@@ -102,6 +103,60 @@ class ExcelFile:
         # for key in self.mHeaderInfoColumCache:
         #     print(key, ":::", self.mHeaderInfoColumCache[key])                            
 
+    def __CheckMatchHeader(self, checkingName: str, headerFullName: str):
+        """
+        Check if a name is a header full name. Ex: "Function" is name of header full name "Function:FileName:PIC"
+        Note: "Function:" is not name of header full name "Function:FileName:PIC"
+        """
+        if (checkingName == headerFullName):
+            return True
+        inputStruct = checkingName.split(D_SEPERATOR, 1)
+        checkStruct = headerFullName.split(D_SEPERATOR, 1)
+        if (inputStruct[0] == checkStruct[0]):
+            if len(inputStruct) > 1 and len(checkStruct) > 1:
+                if inputStruct[1] and inputStruct[1] in checkStruct[1]:
+                    return True
+                else:
+                    return False                    
+            else:
+                return True
+        return False  
+        
+    
+    # Get list of matched header with a input name
+    # headerStruct: "End Date:Test term"
+    # return list of CellInfo (s)
+    def __GetMatchHeader(self, headerStruct: str):
+        matchHeader = []
+        for key in self.mHeaderList:
+            if (self.__CheckMatchHeader(headerStruct, key)):
+                matchHeader.append(self.mHeaderList[key].mCellInfo)
+        return matchHeader     
+
+    # Get a cell at header name and row offset. Row offset start at 1
+    # Ex: GetCell("Function:PIC:Company", 1):
+    # return Cell                 
+    def GetCell(self, headerStruct: str, rowOffset: int):
+        matchHeader = self.__GetMatchHeader(headerStruct)
+        if (len(matchHeader) == 0):
+                raise Exception("Cannot find header: " +  headerStruct)
+        if (len(matchHeader) > 1):
+            raise Exception("More than one header: " + headerStruct)
+        # print(matchHeader)
+        col = matchHeader[0].mCell.column
+        row = (matchHeader[0].mCell.row + matchHeader[0].mRowSize - 1) + rowOffset
+        # print(row, col)
+        # return self.mSheet.cell(row=row, column=col)
+        cell = self.mSheet.cell(row=row, column=col)
+        if cell.coordinate in self.mMergedDataCellInfo:
+            return self.mMergedDataCellInfo[cell.coordinate].mTopLeftCell
+        return cell            
+
+    # Write to cell at header name and row offset.
+    def Write(self, headerStruct: str, rowOffset: int, value: str):
+        cell = self.GetCell(headerStruct, rowOffset)
+        cell.value = value          
+
     def GetValue(self, cell):
         if cell.coordinate in self.mMergedDataCellInfo:
             return self.mMergedDataCellInfo[cell.coordinate].mTopLeftCell.value
@@ -114,6 +169,9 @@ class ExcelFile:
         self.mDataColumnSize = Utils.GetDimension(headerRange)[1]
         self.__GetHeaderInfo()
         self.mPivotRow = openpyxl.utils.cell.coordinate_from_string(self.mHeaderRange.split(":")[1])[1]
+
+    def Close(self):
+        self.mWorkBook.save(self.mPath)
 
     def Read(self, rowOffset: int):
         returnValue = {}
