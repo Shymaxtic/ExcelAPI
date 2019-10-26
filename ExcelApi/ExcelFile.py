@@ -1,4 +1,4 @@
-# Copyright (C) 2019 QuynhPP
+# Copyright (C) 2019 Shymaxtic
 # 
 # This file is part of ExcelAPI.
 # 
@@ -33,6 +33,7 @@ class ExcelFile:
     mHeaderCellInfo = {}           # list of info of main cell of header {coordinate:cell info}
     mMergedDataCellInfo = {}        # list of cell in merged cell area {coordinate:cell info}
     mPivotRow = 0                   # row at lowest header.
+    mPivotColum = 0                 # colum at first header
     mHeaderInfoColumCache = {}      # {column:fullheadername}
     mDictData = {}       
 
@@ -88,15 +89,16 @@ class ExcelFile:
                 # if upper cell (merged cells/single cell) has value. It is parent of this cell
                 upperCell = self.mSheet.cell(row=icell.row - 1, column=icell.column)
                 # Check if upper cell is in any created header info
+                newHeaderInfo = HeaderInfo(self.mHeaderCellInfo[key], None)
                 for headerInfo in self.mHeaderList.values():
                     if headerInfo.mCellInfo.Has(upperCell):
                         newHeaderInfo = HeaderInfo(self.mHeaderCellInfo[key], headerInfo)
-                        self.mHeaderList[newHeaderInfo.mFullName] = HeaderInfo(self.mHeaderCellInfo[key], headerInfo)
-                        self.mHeaderInfoColumCache[self.mHeaderCellInfo[key].mCell.column] = newHeaderInfo.mFullName
                         break
+                self.mHeaderList[newHeaderInfo.mFullName] = newHeaderInfo
+                self.mHeaderInfoColumCache[self.mHeaderCellInfo[key].mCell.column] = newHeaderInfo.mFullName
             else:
                 newHeaderInfo = HeaderInfo(self.mHeaderCellInfo[key], None) 
-                self.mHeaderList[newHeaderInfo.mFullName] = (newHeaderInfo)
+                self.mHeaderList[newHeaderInfo.mFullName] = newHeaderInfo
                 self.mHeaderInfoColumCache[self.mHeaderCellInfo[key].mCell.column] = newHeaderInfo.mFullName
         # for key in self.mHeaderList:
         #     print(key, ":::", self.mHeaderList[key])
@@ -182,29 +184,45 @@ class ExcelFile:
         cell.value = value          
 
     def GetValue(self, cell):
+        """Get value at a cell with merged lookup
+        
+        Arguments:
+            cell {openpyxl.cell.Cell} -- excel cell
+        
+        Returns:
+            str -- value at cell with merged lookup
+        """
         if cell.coordinate in self.mMergedDataCellInfo:
             return self.mMergedDataCellInfo[cell.coordinate].mTopLeftCell.value
         return cell.value            
 
-    def Open(self, sheet: str, headerRange:str, readOnly=False):
-        self.mHeaderRange = headerRange
+    def Open(self, sheet=None, headerRange=None, readOnly=False):
         self.mWorkBook = openpyxl.load_workbook(self.mPath, readOnly)
+        if (sheet and headerRange):
+            self.LoadSheet(sheet, headerRange)
+
+    def LoadSheet(self, sheet:str, headerRange: str):
         self.mSheet = self.mWorkBook[sheet]
+        self.mHeaderRange = headerRange
         self.mDataColumnSize = Utils.GetDimension(headerRange)[1]
         self.__GetHeaderInfo()
         self.mPivotRow = openpyxl.utils.cell.coordinate_from_string(self.mHeaderRange.split(":")[1])[1]
+        columLetter = openpyxl.utils.cell.coordinate_from_string(self.mHeaderRange.split(":")[0])[0]
+        self.mPivotColum = openpyxl.utils.cell.column_index_from_string(columLetter)
         self.__LoadData()
 
-
-    def Close(self):
+    def Save(self):
         self.mWorkBook.save(self.mPath)
+    
+    def SaveAs(self, path:str):
+        self.mWorkBook.save(path)
 
     def Read(self, rowOffset: int):
         returnValue = {}
         for i in range(self.mDataColumnSize):
-            headerName = self.mHeaderInfoColumCache[i+1]
+            headerName = self.mHeaderInfoColumCache[self.mPivotColum + i]
             # print(headerName)
-            cell = self.mSheet.cell(row=self.mPivotRow+rowOffset,column=i+1)
+            cell = self.mSheet.cell(row=self.mPivotRow+rowOffset,column=self.mPivotColum+i)
             returnValue[headerName] = self.GetValue(cell)
         return returnValue
 
@@ -224,7 +242,7 @@ class ExcelFile:
             returnValue.append(value)
         return returnValue
 
-           # Read data at conditions
+    # Read data at conditions
     # outputFields: ["C0:Coverage", "C1:Coverage"]
     # conditionFields: {"File Name": "Test.cpp1", "Function Name": "TestFunction"}
     # return {"C0:Coverage" : ["100%"], "C1:Coverage" : ["100%"]} 

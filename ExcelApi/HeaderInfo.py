@@ -1,4 +1,4 @@
-# Copyright (C) 2019 QuynhPP
+# Copyright (C) 2019 Shymaxtic
 # 
 # This file is part of ExcelAPI.
 # 

@@ -1,6 +1,14 @@
 import openpyxl
 
 def GetDimension(rangeString: str):
+    """Get dimension of a range
+    
+    Arguments:
+        rangeString {str} -- range in excel style. Ex: "A1:B2"
+    
+    Returns:
+        int, int -- row size, column size
+    """
     min_col, min_row, max_col, max_row = openpyxl.utils.range_boundaries(rangeString)
     return (max_row - min_row) + 1, (max_col - min_col) + 1
 
