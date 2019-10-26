@@ -278,7 +278,7 @@ class ExcelFile:
             if (len(tmpKeys) > 1):
                 raise Exception("More than one condition field: " + conditionField)
             if (len(tmpKeys) == 0):
-                raise Exception("Cannot find output condition: " + conditionField)                
+                raise Exception("Cannot find condition field: " + conditionField)                
             # conditionPairKey.append((tmpKeys[0], conditionField))   
             matchConditionKeys[tmpKeys[0]] = conditionFields[conditionField]        
         # print("matchConditionKeys=", matchConditionKeys)                                                                                            
