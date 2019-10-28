@@ -269,7 +269,6 @@ class ExcelFile:
         # print("outputPairKey=", outputPairKey)
         # check if condition field is unique
         matchConditionKeys = {}
-        conditionFields.keys
         for conditionField in conditionFields: # conditionField is header name
             tmpKeys = []
             for key in self.mDictData: # key is header full name
@@ -299,6 +298,40 @@ class ExcelFile:
         # print(matchOutputKeys) 
         for pair in outputPairKey:
             returnVal[pair[1]] = matchOutputKeys[pair[0]]      
+
+        # print(returnVal)                 
+        return returnVal
+
+    def ReadRowByCondition(self, conditionFields):
+        # check if output fields is unique
+        returnVal = {}
+        # check if condition field is unique
+        matchConditionKeys = {}
+        for conditionField in conditionFields: # conditionField is header name
+            tmpKeys = []
+            for key in self.mDictData: # key is header full name
+                if (self.__CheckMatchHeader(conditionField, key)):
+                    tmpKeys.append(key)
+            if (len(tmpKeys) > 1):
+                raise Exception("More than one condition field: " + conditionField)
+            if (len(tmpKeys) == 0):
+                raise Exception("Cannot find condition field: " + conditionField)                
+            matchConditionKeys[tmpKeys[0]] = conditionFields[conditionField] 
+        indexs = []
+        for key in matchConditionKeys:
+            for i, val in enumerate(self.mDictData[key]):
+                if (val == matchConditionKeys[key]):
+                   indexs.append(i)
+        # print(indexs)                
+        # get index has more one time
+        numOfcond = len(matchConditionKeys)
+        matchIdex = set([x for x in indexs if indexs.count(x) == numOfcond])                            
+        # print(matchIdex)
+        for key in self.mDictData.keys():
+            returnVal[key] = []
+        for key in returnVal:
+            for i in matchIdex:
+                returnVal[key].append(self.mDictData[key][i])
 
         # print(returnVal)                 
         return returnVal
