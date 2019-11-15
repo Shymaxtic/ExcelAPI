@@ -230,7 +230,7 @@ class ExcelFile:
         returnValue = []
         matchHeader = self.__GetMatchHeader(headerName)
         if (len(matchHeader) == 0):
-                raise Exception("Cannot find header: " + headerName)
+            raise Exception("Cannot find header: " + headerName)
         if (len(matchHeader) > 1):
             raise Exception("More than one header: " + headerName)
         # print(matchHeader)
@@ -251,7 +251,6 @@ class ExcelFile:
         matchOutputKeys = {}
         returnVal = {}
         outputPairKey = []
-        # conditionPairKey = []
         for outputField in outputFields:   # outputField is header name
             tmpKeys = []
             for key in self.mDictData: # key is header full name
@@ -262,11 +261,9 @@ class ExcelFile:
             if (len(tmpKeys) == 0):
                 raise Exception("Cannot find output field: " + outputField)                
             matchOutputKeys[tmpKeys[0]] = [] 
+            # prepare dictionary for return value.
             returnVal[outputField] = []
             outputPairKey.append((tmpKeys[0], outputField))
-        # print("matchOutputKeys=", matchOutputKeys)              
-        # print("returnVal=", returnVal)       
-        # print("outputPairKey=", outputPairKey)
         # check if condition field is unique
         matchConditionKeys = {}
         for conditionField in conditionFields: # conditionField is header name
