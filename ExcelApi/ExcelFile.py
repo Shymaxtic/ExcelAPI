@@ -23,23 +23,20 @@ import Utils
 
 class ExcelFile:
 
-    mPath = ""
-    mHeaderRange = ""           # Ex: "A1:N1"
-    mWorkBook = None
-    mSheet = None
-    mHeaderList = {}                # {fullheadername:header info}   
-    mDataColumnSize = 0                # number of data column
-    mDataRowSize  = 0                 # number of data row
-    mHeaderCellInfo = {}           # list of info of main cell of header {coordinate:cell info}
-    mMergedDataCellInfo = {}        # list of cell in merged cell area {coordinate:cell info}
-    mPivotRow = 0                   # row at lowest header.
-    mPivotColum = 0                 # colum at first header
-    mHeaderInfoColumCache = {}      # {column:fullheadername}
-    mDictData = {}       
-
-
     def __init__(self, path: str):
-        self.mPath = path     
+        self.mPath = path    
+        self.mHeaderRange = ""           # Ex: "A1:N1"
+        self.mWorkBook = None
+        self.mSheet = None
+        self.mHeaderList = {}                # {fullheadername:header info}   
+        self.mDataColumnSize = 0                # number of data column
+        self.mDataRowSize  = 0                 # number of data row
+        self.mHeaderCellInfo = {}           # list of info of main cell of header {coordinate:cell info}
+        self.mMergedDataCellInfo = {}        # list of cell in merged cell area {coordinate:cell info}
+        self.mPivotRow = 0                   # row at lowest header.
+        self.mPivotColum = 0                 # colum at first header
+        self.mHeaderInfoColumCache = {}      # {column:fullheadername}
+        self.mDictData = {}   
 
     def __PostProcessMergedCell(self):
         self.mMergedDataCellInfo = {}
