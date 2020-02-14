@@ -24,23 +24,23 @@ import Utils
 class ExcelFile:
 
     def __init__(self, path: str):
-        self.mPath = path    
-        self.mHeaderRange = ""           # Ex: "A1:N1"
-        self.mWorkBook = None
-        self.mSheet = None
-        self.mHeaderList = {}                # {fullheadername:header info}   
-        self.mDataColumnSize = 0                # number of data column
-        self.mDataRowSize  = 0                 # number of data row
-        self.mHeaderCellInfo = {}           # list of info of main cell of header {coordinate:cell info}
-        self.mMergedDataCellInfo = {}        # list of cell in merged cell area {coordinate:cell info}
-        self.mPivotRow = 0                   # row at lowest header.
-        self.mPivotColum = 0                 # colum at first header
-        self.mHeaderInfoColumCache = {}      # {column:fullheadername}
-        self.mDictData = {}   
+        self.mPath                  = path    
+        self.mHeaderRange           = ""           # Ex: "A1:N1"
+        self.mWorkBook              = None
+        self.mSheet                 = None
+        self.mHeaderList            = {}                # {fullheadername:header info}   
+        self.mDataColumnSize        = 0                # number of data column
+        self.mDataRowSize           = 0                 # number of data row
+        self.mHeaderCellInfo        = {}           # list of info of main cell of header {coordinate:cell info}
+        self.mMergedDataCellInfo    = {}        # list of cell in merged cell area {coordinate:cell info}
+        self.mPivotRow              = 0                   # row at lowest header.
+        self.mPivotColum            = 0                 # colum at first header
+        self.mHeaderInfoColumCache  = {}      # {column:fullheadername}
+        self.mDictData              = {}   
 
     def __PostProcessMergedCell(self):
-        self.mMergedDataCellInfo = {}
-        self.mHeaderCellInfo = {}
+        self.mMergedDataCellInfo, self.mHeaderCellInfo = {}, {}
+
         for cellRange in self.mSheet.merged_cells.ranges:
             for rowOfCell in self.mSheet[cellRange.__str__()]:
                 for cell in rowOfCell:
@@ -77,8 +77,7 @@ class ExcelFile:
         """
         self.__GetHeaderCellInfo()
         sortedKeys = sorted(self.mHeaderCellInfo.keys())
-        self.mHeaderList = {}
-        self.mHeaderInfoColumCache = {}
+        self.mHeaderList, self.mHeaderInfoColumCache = {}, {}
         for key in sortedKeys:
             # prepare parent header
             icell = self.mHeaderCellInfo[key].mCell

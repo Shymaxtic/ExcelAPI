@@ -23,11 +23,6 @@ class CellInfo:
     Cell info for cell in merged cell area or single cell.
     """
 
-    mCell = None
-    mTopLeftCell = None
-    mRowSize = 0
-    mColumnSize = 0
-
     def __init__(self, cell : openpyxl.cell.Cell, topleftCell: openpyxl.cell.Cell, rowSize: int, colSize: int):
         self.mCell = cell                   # this cell
         self.mTopLeftCell = topleftCell     # top-left cell of merged area
