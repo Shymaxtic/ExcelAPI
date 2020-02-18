@@ -51,7 +51,6 @@ class ExcelFile:
                         rowNum = len(self.mSheet[cellRange.__str__()]) # get row size
                         topLeftCell = self.mSheet[cellRange.__str__()][0][0] # get top-left cell
                         self.mHeaderCellInfo[cell.coordinate] = CellInfo(cell, topLeftCell, rowNum, colNum)
-                        continue
                     else:
                         colNum = len(self.mSheet[cellRange.__str__()][0]) # get column size
                         rowNum = len(self.mSheet[cellRange.__str__()]) # get row size
@@ -125,10 +124,7 @@ class ExcelFile:
     # headerStruct: "End Date:Test term"
     # return list of CellInfo (s)
     def __GetMatchHeader(self, headerStruct: str):
-        matchHeader = []
-        for key in self.mHeaderList:
-            if (self.__CheckMatchHeader(headerStruct, key)):
-                matchHeader.append(self.mHeaderList[key].mCellInfo)
+        matchHeader = [self.mHeaderList[key].mCellInfo for key in self.mHeaderList if self.__CheckMatchHeader(headerStruct, key)]
         return matchHeader     
 
     # Get a cell at header name and row offset. Row offset start at 1
@@ -320,11 +316,12 @@ class ExcelFile:
         numOfcond = len(matchConditionKeys)
         matchIdex = set([x for x in indexs if indexs.count(x) == numOfcond])                            
         # print(matchIdex)
-        for key in self.mDictData.keys():
-            returnVal[key] = []
-        for key in returnVal:
-            for i in matchIdex:
-                returnVal[key].append(self.mDictData[key][i])
+        # for key in self.mDictData.keys():
+        #     returnVal[key] = []
+        # for key in returnVal:
+        #     for i in matchIdex:
+        #         returnVal[key].append(self.mDictData[key][i])
 
+        returnVal = {key:[self.mDictData[key][i] for i in matchIdex] for key in self.mDictData.keys()}
         # print(returnVal)                 
         return returnVal
