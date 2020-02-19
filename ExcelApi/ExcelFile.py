@@ -149,14 +149,12 @@ class ExcelFile:
    # Load all data and store to mDictData                                
     def __LoadData(self):
         self.mDataRowSize = 0
-        self.mDictData = {}
         rowValue = {}
         rowOffset = 1
         rowValue = self.Read(rowOffset)
         stop = all(value==None for value in rowValue.values())
         # init key for data
-        for key in rowValue:
-            self.mDictData[key] = []
+        self.mDictData = {key: [] for key in rowValue}
         while (not stop):
             # load each field of row value to mDictData
             # print(rowValue)
@@ -221,10 +219,8 @@ class ExcelFile:
     def ReadByField(self, headerName: str):
         returnValue = []
         matchHeader = self.__GetMatchHeader(headerName)
-        if (len(matchHeader) == 0):
-            raise Exception("Cannot find header: " + headerName)
-        if (len(matchHeader) > 1):
-            raise Exception("More than one header: " + headerName)
+        if (len(matchHeader) == 0): raise Exception("Cannot find header: " + headerName)
+        if (len(matchHeader) > 1): raise Exception("More than one header: " + headerName)
         # print(matchHeader)
         col = matchHeader[0].mCell.column
         for i in range(1, self.mDataRowSize + 1):
@@ -241,86 +237,50 @@ class ExcelFile:
     def ReadByCondition(self, outputFields: list, conditionFields):
         # check if output fields is unique
         matchOutputKeys = {}
-        returnVal = {}
         outputPairKey = []
         for outputField in outputFields:   # outputField is header name
-            tmpKeys = []
-            for key in self.mDictData: # key is header full name
-                if (self.__CheckMatchHeader(outputField, key)):
-                    tmpKeys.append(key)
-            if (len(tmpKeys) > 1):
-                raise Exception("More than one output field: " + outputField)
-            if (len(tmpKeys) == 0):
-                raise Exception("Cannot find output field: " + outputField)                
+            tmpKeys = [key for key in self.mDictData if self.__CheckMatchHeader(outputField, key)]
+            if (len(tmpKeys) > 1): raise Exception("More than one output field: " + outputField)
+            if (len(tmpKeys) == 0): raise Exception("Cannot find output field: " + outputField)                
             matchOutputKeys[tmpKeys[0]] = [] 
-            # prepare dictionary for return value.
-            returnVal[outputField] = []
             outputPairKey.append((tmpKeys[0], outputField))
         # check if condition field is unique
         matchConditionKeys = {}
         for conditionField in conditionFields: # conditionField is header name
-            tmpKeys = []
-            for key in self.mDictData: # key is header full name
-                if (self.__CheckMatchHeader(conditionField, key)):
-                    tmpKeys.append(key)
-            if (len(tmpKeys) > 1):
-                raise Exception("More than one condition field: " + conditionField)
-            if (len(tmpKeys) == 0):
-                raise Exception("Cannot find condition field: " + conditionField)                
+            tmpKeys = [key for key in self.mDictData if self.__CheckMatchHeader(conditionField, key)]
+            if (len(tmpKeys) > 1): raise Exception("More than one condition field: " + conditionField)
+            if (len(tmpKeys) == 0): raise Exception("Cannot find condition field: " + conditionField)                
             # conditionPairKey.append((tmpKeys[0], conditionField))   
             matchConditionKeys[tmpKeys[0]] = conditionFields[conditionField]        
         # print("matchConditionKeys=", matchConditionKeys)                                                                                            
         # get index of condition field if equal value
-        indexs = []
-        for key in matchConditionKeys:
-            for i, val in enumerate(self.mDictData[key]):
-                if (val == matchConditionKeys[key]):
-                   indexs.append(i)
+        indexs = [i for key in matchConditionKeys for i, val in enumerate(self.mDictData[key]) if val == matchConditionKeys[key]]
         # print(indexs)                
         # get index has more one time
         numOfcond = len(matchConditionKeys)
         matchIdex = set([x for x in indexs if indexs.count(x) == numOfcond])                            
         # print(matchIdex)
-        for key in matchOutputKeys:
-            for i in matchIdex:
-                matchOutputKeys[key].append(self.mDictData[key][i])
-        # print(matchOutputKeys) 
-        for pair in outputPairKey:
-            returnVal[pair[1]] = matchOutputKeys[pair[0]]      
-
+        matchOutputKeys = {key: [self.mDictData[key][i] for i in matchIdex] for key in matchOutputKeys}
+        # print(matchOutputKeys)  
+        returnVal = {pair[1]: matchOutputKeys[pair[0]] for pair in outputPairKey}
         # print(returnVal)                 
         return returnVal
 
     def ReadRowByCondition(self, conditionFields):
         # check if output fields is unique
-        returnVal = {}
         # check if condition field is unique
         matchConditionKeys = {}
         for conditionField in conditionFields: # conditionField is header name
-            tmpKeys = []
-            for key in self.mDictData: # key is header full name
-                if (self.__CheckMatchHeader(conditionField, key)):
-                    tmpKeys.append(key)
-            if (len(tmpKeys) > 1):
-                raise Exception("More than one condition field: " + conditionField)
-            if (len(tmpKeys) == 0):
-                raise Exception("Cannot find condition field: " + conditionField)                
+            tmpKeys = [key for key in self.mDictData if self.__CheckMatchHeader(conditionField, key)] # key is header full name
+            if (len(tmpKeys) > 1): raise Exception("More than one condition field: " + conditionField)
+            if (len(tmpKeys) == 0): raise Exception("Cannot find condition field: " + conditionField)                
             matchConditionKeys[tmpKeys[0]] = conditionFields[conditionField] 
-        indexs = []
-        for key in matchConditionKeys:
-            for i, val in enumerate(self.mDictData[key]):
-                if (val == matchConditionKeys[key]):
-                   indexs.append(i)
+        indexs = [i for key in matchConditionKeys for i, val in enumerate(self.mDictData[key]) if val == matchConditionKeys[key]]
         # print(indexs)                
         # get index has more one time
         numOfcond = len(matchConditionKeys)
         matchIdex = set([x for x in indexs if indexs.count(x) == numOfcond])                            
         # print(matchIdex)
-        # for key in self.mDictData.keys():
-        #     returnVal[key] = []
-        # for key in returnVal:
-        #     for i in matchIdex:
-        #         returnVal[key].append(self.mDictData[key][i])
 
         returnVal = {key:[self.mDictData[key][i] for i in matchIdex] for key in self.mDictData.keys()}
         # print(returnVal)                 
